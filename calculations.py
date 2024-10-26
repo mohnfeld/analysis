@@ -4,6 +4,18 @@ import numpy as np
 from shapely.geometry import Point, LineString
 
 
+def df_diff(df):
+    diff = df.diff(axis=0).abs()
+    diff[diff > 180] = 360-diff[diff > 180]
+    return diff
+def calculate_total_rotation(rot_x, rot_y, rot_z):
+    #
+    angles = list(zip(*(rot_x, rot_y, rot_z)))
+    angle_diff = np.abs(np.diff(angles,axis=0))
+    angle_diff[angle_diff > 180] = 360-angle_diff[angle_diff > 180]
+    total_rotation = np.mean(angle_diff,axis=0)
+    return total_rotation
+
 def calculate_speed(x1, z1, t1, x2, z2, t2):
     distance = np.sqrt((x2 - x1) ** 2 + (z2 - z1) ** 2)
     time_diff = t2 - t1
