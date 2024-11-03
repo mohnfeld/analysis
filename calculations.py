@@ -24,6 +24,7 @@ def calculate_speed(x1, z1, t1, x2, z2, t2):
     return distance / time_diff
 
 
+
 def calculate_area_covered_and_speeds(pos_x, pos_z, speeds, time, outer_polygon, inner_polygon):
     trajectory_points = [Point(x, z) for x, z in zip(pos_x, pos_z)]
 

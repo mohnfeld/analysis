@@ -1,6 +1,85 @@
 # geometry_utils.py
 
 import numpy as np
+import numpy.linalg as la
+
+def dist(a, b):
+    return np.sqrt(np.square(a-b).sum(axis=1))
+
+def minimum_distance(v, w, p):
+  l2 = (dist(v, w) ** 2)[0]
+  if l2 == 0.0:
+    return dist(p, v)
+  t = np.clip(np.dot(p - v, np.transpose(w - v, [1,0])) / l2, 0, 1)
+  projection = v + t * (w - v)
+  return dist(p, projection)
+
+def mean_center_distance(points, center_point):
+    dists = dist(points, center_point)
+    return np.mean(dists)
+
+def mean_edge_distance(points, corner_points):
+    dists = np.zeros((corner_points.shape[0], len(points)))
+    rotated_corner_points = np.roll(corner_points, 1)
+    point_pairs = [(corner_points[i], rotated_corner_points[i]) for i in range(len(corner_points))]
+    for idx, (p1,p2) in enumerate(point_pairs):
+        dists[idx,:] = minimum_distance(np.expand_dims(p1,0),
+                                        np.expand_dims(p2,0),
+                                        points)
+    return np.mean(np.min(dists, axis=0))
+
+def mvee(points, tol=0.1):
+    """
+    Finds the ellipse equation in "center form"
+    (x-c).T * A * (x-c) = 1
+    """
+    N, d = points.shape
+    Q = np.column_stack((points, np.ones(N))).T
+    err = tol+1.0
+    u = np.ones(N)/N
+    while err > tol:
+        # assert u.sum() == 1 # invariant
+        X = np.dot(np.dot(Q, np.diag(u)), Q.T)
+        M = np.diag(np.dot(np.dot(Q.T, la.inv(X)), Q))
+        jdx = np.argmax(M)
+        step_size = (M[jdx]-d-1.0)/((d+1)*(M[jdx]-1.0))
+        new_u = (1-step_size)*u
+        new_u[jdx] += step_size
+        err = la.norm(new_u-u)
+        u = new_u
+        print(err)
+    c = np.dot(u, points)
+    A = la.inv(np.dot(np.dot(points.T, np.diag(u)), points)
+               - np.multiply.outer(c, c))/d
+    return A, c
+
+def get_ellipsoid_axes(points):
+    A, centroid = mvee(points)
+    U, D, V = la.svd(A)
+    # x, y radii.
+    rx, ry = 1./np.sqrt(D)
+    # Major and minor semi-axis of the ellipse.
+    dx, dy = 2 * rx, 2 * ry
+    a, b = max(dx, dy), min(dx, dy)
+    print('a, b: {}, {}'.format(a, b))
+    return a, b
+
+def get_eccentricity(a,b):
+    # Eccentricity
+    e = np.sqrt(a ** 2 - b ** 2) / a
+    return e
+
+def get_path_length(points):
+    return np.sum(np.sqrt((np.diff(points, axis=0) ** 2).sum(axis=1)))
+
+def get_focus_and_eccentricity(points):
+    a, b = get_ellipsoid_axes(points)
+    focus = get_focus(points, a, b)
+    eccentricity = get_eccentricity(a, b)
+    return focus, eccentricity
+def get_focus(points, a, b):
+    length = get_path_length(points)
+    return 1 - a*b/(length**2 / (4*np.pi))
 
 def calculate_tilt_angle(platform_coords):
     x1, z1 = platform_coords[0]
