@@ -17,6 +17,7 @@ def calculate_area_covered_and_speeds(pos_x, pos_z, speeds, time, outer_polygon,
 
     # Calculate area coverage
     trajectory_line = LineString(zip(pos_x, pos_z))
+    total_distance= trajectory_line.length
     trajectory_area = trajectory_line.buffer(0.1)
 
     total_intersection = trajectory_area.intersection(outer_polygon)

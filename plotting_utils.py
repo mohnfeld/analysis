@@ -164,6 +164,7 @@ def plot_movement_trajectory_with_layout(file_path):
                                 pos_x_rotated[i], pos_z_rotated[i], time[i])
         speeds.append(speed)
 
+
     # Plotting
     fig, ax1 = plt.subplots(figsize=(10, 10))
     sc = ax1.scatter(pos_x_rotated, pos_z_rotated, c=time, cmap='viridis', s=5)
